@@ -1,22 +1,20 @@
 services:
-  # PostgreSQL database
+  # PostgreSQL (managed by Render)
   - type: pgsql
     name: baserow-db
-    ipAllowList: []  # Adjust as needed
-    plan: starter
+    ipAllowList: []  # Optional: restrict IPs
 
-  # Redis cache/queue
+  # Redis
   - type: redis
     name: baserow-redis
-    plan: starter
+    ipAllowList: []
 
-  # Baserow web app (all-in-one Docker image)
+  # Baserow (using official all-in-one Docker image)
   - type: web
     name: baserow
     env: docker
-    dockerfilePath: ./docker/Dockerfile
-    repo: https://github.com/baserow/baserow
-    plan: starter  # Scale to pro/standard as needed
+    image: baserow/baserow:latest  # Official image, no Dockerfile needed
+    plan: starter
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -27,13 +25,24 @@ services:
           name: baserow-redis
           property: connectionString
       - key: BASEROW_PUBLIC_URL
-        value: https://your-app.onrender.com  # Replace with your Render domain
+        value: https://your-app-name.onrender.com  # Your Render domain
       - key: EMAIL_HOST
-        value: smtp.example.com  # Configure your SMTP
-      - key: NEXT_PUBLIC_BASEROW_PUBLIC_URL
-        value: https://your-app.onrender.com
-      # Add more from Baserow's .env.example (e.g., SECRET_KEY_BASE)
-
+        value: smtp.gmail.com  # Configure SMTP (optional for emails)
+      - key: EMAIL_HOST_USER
+        generateValue: true
+      - key: EMAIL_HOST_PASSWORD
+        generateValue: true
+      - key: SECRET_KEY_BASE
+        generateValue: true
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: NEXTAUTH_SECRET
+        generateValue: true
     healthCheckPath: /api/ping/
+    handles:
+      - method: POST
+        path: /_matrix
+      - method: GET
+        path: /api
     autoDeploy: true
 
