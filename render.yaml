@@ -1,32 +1,39 @@
 services:
+  # PostgreSQL database
+  - type: pgsql
+    name: baserow-db
+    ipAllowList: []  # Adjust as needed
+    plan: starter
+
+  # Redis cache/queue
+  - type: redis
+    name: baserow-redis
+    plan: starter
+
+  # Baserow web app (all-in-one Docker image)
   - type: web
     name: baserow
     env: docker
-    plan: standard
-    dockerfilePath: ./deploy/render/Dockerfile
+    dockerfilePath: ./docker/Dockerfile
+    repo: https://github.com/baserow/baserow
+    plan: starter  # Scale to pro/standard as needed
     envVars:
-      - key: SECRET_KEY
-        generateValue: true
-      - key: PORT
-        value: 10000
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: baserow-redis
-          property: connectionString
       - key: DATABASE_URL
         fromDatabase:
           name: baserow-db
           property: connectionString
-      - key: BASEROW_AMOUNT_OF_WORKERS
-        value: 1
-      - key: BASEROW_TRIGGER_SYNC_TEMPLATES_AFTER_MIGRATION
-        value: false
-  - type: redis
-    name: baserow-redis
-    ipAllowList: []
-    plan: free
-    maxmemoryPolicy: noeviction
-databases:
-  - name: baserow-db
-    ipAllowList: []
+      - key: REDIS_URL
+        fromDatabase:
+          name: baserow-redis
+          property: connectionString
+      - key: BASEROW_PUBLIC_URL
+        value: https://your-app.onrender.com  # Replace with your Render domain
+      - key: EMAIL_HOST
+        value: smtp.example.com  # Configure your SMTP
+      - key: NEXT_PUBLIC_BASEROW_PUBLIC_URL
+        value: https://your-app.onrender.com
+      # Add more from Baserow's .env.example (e.g., SECRET_KEY_BASE)
+
+    healthCheckPath: /api/ping/
+    autoDeploy: true
+
